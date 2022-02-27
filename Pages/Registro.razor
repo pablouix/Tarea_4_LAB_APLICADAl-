@@ -1,0 +1,215 @@
+﻿@page "/Registro"
+
+@inject IToastService toast
+<PageTitle>Registro</PageTitle>
+
+<EditForm Model="productos"  OnValidSubmit="Guardar">
+
+    <DataAnnotationsValidator />
+
+    <div class="container">
+
+        <div class="card ">
+            <div class="card-header">
+                <h3> Registro de productos </h3>
+            </div>
+
+            <div class="card-body">
+
+                <div class="form-row align-items-center">
+                    <div class="col">
+                        <div class="form-group">
+                            <label>Producto Id</label>
+                            <div class="input-group">
+                                <InputNumber @bind-Value="productos.ProductoId" class="form-control col-4" />
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-primary input-group-text" @onclick="Buscar"><span
+                                            class="oi oi-magnifying-glass"></span></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* Descripcion *@
+                <div class="form-group">
+                    <label> Descripcion </label>
+                    <InputText class="form-control" @bind-Value="productos.Descripcion" />
+                    <ValidationMessage For="@(() => productos.Descripcion)" />
+                </div>
+
+                @* Costo *@
+                <div class="form-group">
+                    <label> Costo </label>
+                    <InputNumber class="form-control" @bind-Value="productos.Costo" />
+                    <ValidationMessage For="@(() => productos.Costo)" />
+                </div>
+
+                @* Ganancia *@
+                <div class="form-group">
+                    <label> Ganancia </label>
+                    <InputNumber class="form-control" @bind-Value="productos.Ganancia" />
+                    <ValidationMessage For="@(() => productos.Ganancia)" />
+                </div>
+
+
+                @* Precio *@
+                <div class="form-group">
+                    <label> Precio </label>
+                    <InputNumber class="form-control" @bind-Value="productos.Precio" />
+                    <ValidationMessage For="@(() => productos.Precio)" />
+                </div>
+
+            </div>
+
+
+               <div class="container">
+
+                    <div class="card-body">
+                        <div class="card-header">
+                            <h3>Detalle de producto </h3>
+                            <div class="form-group">
+                                <label> Presentacion </label>
+                                <InputText class="form-control" @bind-Value="productosDetalles.Presentacion" />
+                                <ValidationMessage For="@(() => productosDetalles.Presentacion)" />
+                            </div>
+
+                            <div class="form-group">
+                                <label> Cantidad </label>
+                                <InputNumber class="form-control" @bind-Value="productosDetalles.Cantidad" />
+                                <ValidationMessage For="@(() => productosDetalles.Cantidad)" />
+                            </div>
+
+                            <div class="form-group">
+                                <label> Precio </label>
+                                <InputNumber class="form-control" @bind-Value="productosDetalles.Precio" />
+                                <ValidationMessage For="@(() => productosDetalles.Precio)" />
+                            </div>
+
+                        </div>
+                        <div class="card-footer">
+                            <div class="form-group text-center" display: inline-block>
+                                <button type="button" class="btn btn-warning" @onclick="Agregar"><span class="oi oi-plus"></span></button>
+                            </div>
+                        
+                        </div>
+
+                        <table class="table table-secondary">
+                            <thead class="thead-dark">
+                                <tr class="table-info">
+                                    <th>Id</th>
+                                    <th>Id Detalle</th>
+                                    <th>Presentacion</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in listaProductosDetalles)
+                                {
+                                    <tr>
+                                        <td>@item.ProductosId</td>
+                                        <td>@item.ProductosDetallesId</td>
+                                        <td>@item.Presentacion</td>
+                                        <td>@item.Cantidad</td>
+                                        <td>@item.Precio</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div> 
+               </div>
+
+            <div class="card-footer">
+                <div class="form-group text-center" display: inline-block>
+                    <button type="button" class="btn btn-lg btn-primary" @onclick="Nuevo">Nuevo</button>
+                    <button type="submit" class="btn btn-lg btn-success" @onclick="Guardar">Guardar</button>
+                    <button type="button" class="btn btn-lg btn-danger" @onclick="Eliminar"><span class="oi oi-trash"></span></button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</EditForm>
+
+
+@code {
+    [Parameter]
+    public int ProductoId {get; set;}
+    public Productos productos { get; set; } = new Productos();
+    public ProductosDetalles productosDetalles {get; set;} = new ProductosDetalles();
+    public List<ProductosDetalles> listaProductosDetalles {get; set;} = new List<ProductosDetalles>();
+        protected override void OnInitialized()
+        {
+            Nuevo();
+            Buscar();
+            CargarLista();
+        }
+    
+    public void Nuevo()
+    {
+        productos = new Productos();
+    }
+
+    private void Buscar()
+    {
+        if (productos.ProductoId > 0)
+        {
+            var encontrado = ProductosBLL.Buscar(productos.ProductoId);
+            Nuevo();
+            if(encontrado != null)
+                this.productos = encontrado;
+            else    
+               toast.ShowWarning("No encontrado");
+
+        }
+    }
+
+    public void Agregar()
+    {
+        CargarLista();
+        productos.ProductosDetalles.Add(new ProductosDetalles(productos.ProductoId, productosDetalles.Presentacion, productosDetalles.Cantidad, productosDetalles.Precio));
+    }
+
+    public void CargarLista()
+    {
+        productos.ProductosDetalles = new List<ProductosDetalles>();
+    }
+
+    public void Guardar()
+    {
+        bool guardo;    
+
+        float ganancia = productos.Costo * productos.Ganancia / 100;
+        productos.Precio = productos.Costo + ganancia;
+
+        guardo = ProductosBLL.Guardar(productos);
+
+        if(guardo)
+        {
+            toast.ShowSuccess("Guardado correctamente...");
+            Nuevo();
+        }
+        else 
+            toast.ShowError("No fue posible guardar");
+            Nuevo();
+    }
+
+    public void Eliminar()
+    {
+        bool elimino;
+
+        elimino = ProductosBLL.Eliminar(productos.ProductoId);
+
+        if(elimino)
+        {
+            Nuevo();
+            toast.ShowSuccess("Eliminado correctamente...");
+        }
+        else    
+            toast.ShowError("No fue posible eliminar");
+    }
+
+}
